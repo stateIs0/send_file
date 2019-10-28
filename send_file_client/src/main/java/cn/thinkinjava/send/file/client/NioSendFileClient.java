@@ -185,7 +185,7 @@ public class NioSendFileClient implements SendFileClient {
             } while (alreadySend < fc.size());
             bb.clear();
             long end = System.currentTimeMillis();
-            logger.info("send file {} success, size = {}, cost time = {}", file.getName(), file.length(), end - start);
+            logger.info("send file {{}} success, size = {}, cost time = {}", file.getName(), file.length(), end - start);
             return new SendResult(true, alreadySend);
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
