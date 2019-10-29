@@ -1,7 +1,7 @@
 
 # send_file Introduce
 
-一个使用 NIO + send file 技术的 server + client ，专门用于服务器之间搬运文件。
+一个使用 NIO + selector + send file 技术的 server + client ，专门用于服务器之间搬运文件。
 
 # quick start
 
