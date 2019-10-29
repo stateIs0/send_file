@@ -16,7 +16,7 @@ public class RpcPacket {
      */
     private long id;
     /**
-     * 数据内容. JSON +  UTF-8 String 编码.
+     * 数据内容. JSON + UTF-8 String 编码.
      */
     private byte[] content;
 

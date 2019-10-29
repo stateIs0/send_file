@@ -20,22 +20,23 @@ public class NioSendFileServer implements SendFileServer {
 
     private static Logger logger = LoggerFactory.getLogger(NioSendFileServer.class);
 
-    private int rnext = 0;
+    private int nextCursor = 0;
 
     /**
-     * 4 个线程, 每个线程管理一个 selector, 每个 selector 管理多个 socketChannel.
+     * 4 个读线程, 每个线程管理一个 selector, 每个 selector 管理多个 socketChannel.
      */
-    private KernelReadProcessor[] worker = new KernelReadProcessor[4];
+    private KernelReadProcessor[] read_workers = new KernelReadProcessor[4];
+    private int musk_read_workers_length = 0;
     /**
-     * 4 个线程, 用于写回数据给客户端.
+     * 4 个线程, 用于回写数据给客户端.
      */
-    private KernelWriteProcessor[] writers = new KernelWriteProcessor[4];
+    private KernelWriteProcessor[] write_workers = new KernelWriteProcessor[4];
     private KernelAcceptProcessor acceptProcessor;
     private AtomicBoolean running = new AtomicBoolean();
     private ServerSocketChannel serverSocketChannel;
 
     private KernelReadProcessor nextKernelReadProcessor() {
-        return worker[Math.abs(++rnext) % worker.length];
+        return read_workers[Math.abs(++nextCursor) & musk_read_workers_length];
     }
 
 
@@ -47,14 +48,16 @@ public class NioSendFileServer implements SendFileServer {
             }
             running.set(true);
 
-            for (int i = 0; i < worker.length; i++) {
-                worker[i] = new KernelReadProcessor(baseDir, Selector.open());
-                worker[i].start();
+            for (int i = 0; i < read_workers.length; i++) {
+                read_workers[i] = new KernelReadProcessor(baseDir, Selector.open());
+                read_workers[i].start();
             }
 
-            for (int i = 0; i < writers.length; i++) {
-                writers[i] = new KernelWriteProcessor();
-                writers[i].start();
+            musk_read_workers_length = read_workers.length - 1;
+
+            for (int i = 0; i < write_workers.length; i++) {
+                write_workers[i] = new KernelWriteProcessor();
+                write_workers[i].start();
             }
 
             doStart(address, port);
@@ -114,9 +117,9 @@ public class NioSendFileServer implements SendFileServer {
 
     @Override
     public void shutdown() {
-        for (int i = 0; i < worker.length; i++) {
-            worker[i].stop();
-            writers[i].stop();
+        for (int i = 0; i < read_workers.length; i++) {
+            read_workers[i].stop();
+            write_workers[i].stop();
         }
         try {
             logger.info("send file server stop success. server socket = {}", serverSocketChannel.socket());

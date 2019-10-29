@@ -5,7 +5,7 @@ import cn.thinkinjava.send.file.common.RpcPacket;
 import java.nio.channels.SocketChannel;
 
 /**
- * 回复包.
+ * 回复给 socketChannel 的映射包.
  */
 class ReplyPacket {
 
