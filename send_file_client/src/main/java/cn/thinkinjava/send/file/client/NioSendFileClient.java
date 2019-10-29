@@ -152,9 +152,9 @@ public class NioSendFileClient implements SendFileClient {
         if (file.isDirectory()) {
             throw new IllegalArgumentException("file can not be dir.");
         }
+        long start = System.currentTimeMillis();
+        FileChannel fc = new RandomAccessFile(file, "rw").getChannel();
         try {
-            long start = System.currentTimeMillis();
-            FileChannel fc = new RandomAccessFile(file, "rw").getChannel();
             byte[] nameContent = file.getName().getBytes();
             long bodyLength = file.length();
             // 魔数
@@ -189,6 +189,8 @@ public class NioSendFileClient implements SendFileClient {
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
             throw e;
+        }finally {
+            fc.close();
         }
 
     }
