@@ -4,6 +4,7 @@ import cn.thinkinjava.send.file.common.MagicNum;
 import cn.thinkinjava.send.file.common.RpcPacket;
 import cn.thinkinjava.send.file.common.SendResult;
 import cn.thinkinjava.send.file.common.util.JackSonUtil;
+import cn.thinkinjava.send.file.common.util.MemoryAllocator;
 import cn.thinkinjava.send.file.common.util.SendFileNameThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,7 @@ class KernelReadProcessor implements Processor {
     // id. 8
     // 文件名长度. 2
     // body 长度. 8
-    private static final int fix_length = 22;
+    private static final int FIX_LENGTH = 22;
 
     private AtomicBoolean running = new AtomicBoolean();
     private boolean force;
@@ -102,29 +103,34 @@ class KernelReadProcessor implements Processor {
             // 文件名长度. 2
             // body 长度. 8
             if (fe.bodyLength == 0 && fe.nameLength == 0 && socketChannel.isOpen()) {
-                ByteBuffer metaBuffer = ByteBuffer.allocateDirect(fix_length);
-                int result = socketChannel.read(metaBuffer);
-                if (result == -1) {
-                    // 表示客户端主动关闭连接.
-                    socketChannel.socket().close();
-                    key.cancel();
-                    logger.warn("client close connection. result is -1, socket = {}", socketChannel.socket());
+
+                ByteBuffer metaBuffer = MemoryAllocator.allocate(FIX_LENGTH);
+                try {
+                    int result = socketChannel.read(metaBuffer);
+                    if (result == -1) {
+                        // 表示客户端主动关闭连接.
+                        socketChannel.socket().close();
+                        key.cancel();
+                        logger.warn("client close connection. result is -1, socket = {}", socketChannel.socket());
+                    }
+                    metaBuffer.flip();
+                    if (!metaBuffer.hasRemaining()) {
+                        // 无数据.
+                        return;
+                    }
+                    int magic_num = metaBuffer.getInt();
+                    if (magic_num != MagicNum.INSTANCE.getNum()) {
+                        // 表示魔数,应该关闭.(可能导致 close_wait)
+                        logger.warn("not match magic num, close socket.");
+                        socketChannel.close();
+                        return;
+                    }
+                    fe.id = metaBuffer.getLong();
+                    fe.nameLength = metaBuffer.getShort();
+                    fe.bodyLength = metaBuffer.getLong();
+                } finally {
+                    MemoryAllocator.recycle(metaBuffer);
                 }
-                metaBuffer.flip();
-                if (!metaBuffer.hasRemaining()) {
-                    // 无数据.
-                    return;
-                }
-                int magic_num = metaBuffer.getInt();
-                if (magic_num != MagicNum.INSTANCE.getNum()) {
-                    // 表示魔数,应该关闭.(可能导致 close_wait)
-                    logger.warn("not match magic num, close socket.");
-                    socketChannel.close();
-                    return;
-                }
-                fe.id = metaBuffer.getLong();
-                fe.nameLength = metaBuffer.getShort();
-                fe.bodyLength = metaBuffer.getLong();
             } else {
                 try {
                     long start = System.currentTimeMillis();

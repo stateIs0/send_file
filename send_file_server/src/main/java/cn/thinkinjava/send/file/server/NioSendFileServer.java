@@ -43,7 +43,7 @@ public class NioSendFileServer implements SendFileServer {
     @Override
     public void start(String address, int port, String baseDir) throws IOException {
         try {
-            if (running.compareAndSet(false, true)) {
+            if (!running.compareAndSet(false, true)) {
                 throw new RuntimeException("send file server already running.");
             }
 

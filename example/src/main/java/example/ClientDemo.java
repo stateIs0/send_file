@@ -21,31 +21,28 @@ public class ClientDemo {
         addFile(file2);
 
         for (int i = 0; i < 15; i++) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    SendFileClient sendFileClient = new NioSendFileClient();
-                    long start = 0L;
-                    try {
-                        sendFileClient.start("localhost", 8083);
-                        start = System.currentTimeMillis();
-                        int single = 0;
-                        for (File file : list) {
-                            if (file.isDirectory()) {
-                                continue;
-                            }
-                            SendResult sr = sendFileClient.sendFile(file);
-                            System.out.println("single = " + ++single);
-                            System.out.println("total = " + ++total);
+            new Thread(() -> {
+                SendFileClient sendFileClient = new NioSendFileClient();
+                long start = 0L;
+                try {
+                    sendFileClient.start("localhost", 8083);
+                    start = System.currentTimeMillis();
+                    int single = 0;
+                    for (File file : list) {
+                        if (file.isDirectory()) {
+                            continue;
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        sendFileClient.shutdown();
-                    } finally {
-                        long end = System.currentTimeMillis();
-                        System.err.println("single cost = " + (end - start));
-                        sendFileClient.shutdown();
+                        SendResult sr = sendFileClient.sendFile(file);
+                        System.out.println("single = " + ++single);
+                        System.out.println("total = " + ++total);
                     }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    sendFileClient.shutdown();
+                } finally {
+                    long end = System.currentTimeMillis();
+                    System.err.println("single cost = " + (end - start));
+                    sendFileClient.shutdown();
                 }
             }).start();
 

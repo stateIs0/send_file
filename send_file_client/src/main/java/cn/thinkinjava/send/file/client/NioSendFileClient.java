@@ -5,6 +5,7 @@ import cn.thinkinjava.send.file.common.PacketCodec;
 import cn.thinkinjava.send.file.common.RpcPacket;
 import cn.thinkinjava.send.file.common.SendResult;
 import cn.thinkinjava.send.file.common.util.JackSonUtil;
+import cn.thinkinjava.send.file.common.util.MemoryAllocator;
 import cn.thinkinjava.send.file.common.util.SendFileNameThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,7 @@ public class NioSendFileClient implements SendFileClient {
 
     @Override
     public void start(String address, int port) throws IOException {
-        if (running.compareAndSet(false, true)) {
+        if (!running.compareAndSet(false, true)) {
             throw new IllegalStateException("client already start.");
         }
         try {
@@ -75,34 +76,37 @@ public class NioSendFileClient implements SendFileClient {
                 while (running.get()) {
                     try {
                         Thread.sleep(10);
-                        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
-                        if (socketChannel.isOpen()) {
-                            socketChannel.read(byteBuffer);
-                        } else {
-                            break;
+                        ByteBuffer byteBuffer = MemoryAllocator.allocate(1024);
+                        try {
+                            if (socketChannel.isOpen()) {
+                                socketChannel.read(byteBuffer);
+                            } else {
+                                break;
+                            }
+
+                            if (!byteBuffer.hasRemaining()) {
+                                continue;
+                            }
+
+                            byteBuffer.flip();
+                            RpcPacket packet = PacketCodec.decode(byteBuffer);
+                            if (packet == null) {
+                                continue;
+                            }
+
+                            resultMap.put(packet.getId(),
+                                    JackSonUtil.byteArray2Obj((packet.getContent()), SendResult.class));
+
+                            CountDownLatch countDownLatch = requestMap.get(packet.getId());
+                            if (countDownLatch == null) {
+                                logger.error("CountDownLatch is null, id = {}", packet.getId());
+                                throw new RuntimeException("CountDownLatch is null.");
+                            }
+                            countDownLatch.countDown();
+                            requestMap.remove(packet.getId());
+                        } finally {
+                            MemoryAllocator.recycle(byteBuffer);
                         }
-
-                        if (!byteBuffer.hasRemaining()) {
-                            continue;
-                        }
-
-                        byteBuffer.flip();
-                        RpcPacket packet = PacketCodec.decode(byteBuffer);
-                        if (packet == null) {
-                            continue;
-                        }
-
-                        resultMap.put(packet.getId(),
-                                JackSonUtil.byteArray2Obj((packet.getContent()), SendResult.class));
-
-                        CountDownLatch countDownLatch = requestMap.get(packet.getId());
-                        if (countDownLatch == null) {
-                            logger.error("CountDownLatch is null, id = {}", packet.getId());
-                            throw new RuntimeException("CountDownLatch is null.");
-                        }
-                        countDownLatch.countDown();
-                        requestMap.remove(packet.getId());
-
                     } catch (Exception e) {
                         // ignore
                         e.printStackTrace();
@@ -128,10 +132,10 @@ public class NioSendFileClient implements SendFileClient {
 
     @Override
     public SendResult sendFile(File file) throws IOException {
-        long id = rpcId.incrementAndGet();
-        send0(file, id);
+        Long id = rpcId.incrementAndGet();
         CountDownLatch latch = new CountDownLatch(1);
         requestMap.put(id, latch);
+        send0(file, id);
         try {
             latch.await();
         } catch (InterruptedException e) {
@@ -187,7 +191,7 @@ public class NioSendFileClient implements SendFileClient {
             } while (alreadySend < fc.size());
             bb.clear();
             long end = System.currentTimeMillis();
-            logger.info("send file {{}} success, size = {}, cost time = {}", file.getName(), file.length(), end - start);
+            //logger.info("send file {{}} success, size = {}, cost time = {}", file.getName(), file.length(), end - start);
             return new SendResult(true, alreadySend);
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
