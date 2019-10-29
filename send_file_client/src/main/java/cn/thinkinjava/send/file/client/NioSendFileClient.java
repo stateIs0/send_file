@@ -17,7 +17,6 @@ import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
@@ -58,10 +57,7 @@ public class NioSendFileClient implements SendFileClient {
             socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, Boolean.FALSE);
             // 非阻塞
             socketChannel.configureBlocking(false);
-//            // 读 selector.
-//            readSelector = Selector.open();
-//
-//            socketChannel.register(readSelector, SelectionKey.OP_READ);
+
             processReadKeys();
             logger.info("send file client start success. socket = {}", socketChannel.socket());
         } catch (Exception e) {
