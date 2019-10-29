@@ -18,7 +18,7 @@
 * send_file_server 服务端模块.
 * example 使用例子. 
 
-# 线程模型
+# 线程 模型
 
 
 
@@ -110,13 +110,13 @@ client socket 也会监听着 read 事件，注意：client 是不需要 select 
 
 #### Server RPC 回复包协议
 
-| 字段名称  | 字段长度(byte) | 字段作用                     |
-| --------- | -------------- | ---------------------------- |
-| magic_num | 4              | 魔数校验，fast fail          |
-| version   | 1              | rpc 协议版本                 |
-| id        | 8              | Request id， TCP 多路复用 id |
-| length    | 8              | rpc 实际消息内容的长度       |
-| arr       | length         | rpc 实际消息内容             |
+| 字段名称  | 字段长度(byte) | 字段作用                          |
+| --------- | -------------- | --------------------------------- |
+| magic_num | 4              | 魔数校验，fast fail               |
+| version   | 1              | rpc 协议版本                      |
+| id        | 8              | Request id， TCP 多路复用 id      |
+| length    | 8              | rpc 实际消息内容的长度            |
+| Content   | length         | rpc 实际消息内容(JSON 序列化协议) |
 
 
 
