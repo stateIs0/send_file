@@ -5,9 +5,9 @@
 
 # 项目结构
 
-* send_file_client client 模块, 
+* send_file_client 客户端模块, 
 * send_file_common 通用模块
-* send_file_server server 端模块.
+* send_file_server 服务端模块.
 * example 使用例子. 
 
 # IO 模型
