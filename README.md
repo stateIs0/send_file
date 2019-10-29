@@ -30,7 +30,7 @@ accept 处理器将 serverSocketChannel 作为 key 注册到一个单独的 sele
 
 
 
-当 accept 处理器成功连接了一个 socket 时，会随机将其交给一个 readProcessor 处理器，readProcessor 又会将其注册到 readSelector 上，当发送 read 事件时，readProcessor 将接受数据。
+当 accept 处理器成功连接了一个 socket 时，会随机将其交给一个 readProcessor 处理器，readProcessor 又会将其注册到 readSelector 上，当发生 read 事件时，readProcessor 将接受数据。
 
 
 
@@ -38,23 +38,23 @@ accept 处理器将 serverSocketChannel 作为 key 注册到一个单独的 sele
 
 
 
-readProcessor 在读到数据后，会将其写入到磁盘中。
+readProcessor 在读到数据后，会将其写入到磁盘中（DMA 的方式，节省 CPU）。
 
 
 
-然后，如果 client 在 RPC 协议中声明“需要回复” 时，那就将结果发送到 Reply Queue 中，反之不必。
+然后，如果 client 在 RPC 协议中声明“需要回复（id 不为 -1）” 时，那就将结果发送到 Reply Queue 中，反之不必。
 
 
 
-当结果发送到  Reply Queue 后，writer 组中的 写线程，则会将结果按照 RPC 协议，写回到 client socket 中。
+当结果发送到  Reply Queue 后，writer 组中的 写线程，则会从 Queue 中拉取回复包，然后将结果按照 RPC 协议，写回到 client socket 中。
 
 
 
-client socket 也会监听着 read 事件，注意：client 是不需要 select 的，以为没必要，selector 只是性能优化的一种方式——即一个线程管理海量连接，如果没有 select， 应用层无法用较低的成本处理海量连接。
+client socket 也会监听着 read 事件，注意：client 是不需要 select 的，因为没必要，selector 只是性能优化的一种方式——即一个线程管理海量连接，如果没有 select， 应用层无法用较低的成本处理海量连接。
 
 
 
-回过来，当 client socket  得到 server 的数据包，会进行解码，并唤醒阻塞在客户端的线程。从而完成一次调用。
+回过来，当 client socket  得到 server 的数据包，会进行解码反序列化，并唤醒阻塞在客户端的线程。从而完成一次调用。
 
 
 
