@@ -1,7 +1,15 @@
 
-# send_file
+# send_file Introduce
 
 一个使用 NIO + send file 技术的 server + client ，专门用于服务器之间搬运文件。
+
+# quick start
+
+1. 打开 example module src 目录.
+2. 运行 example.ServerDemo
+3. 运行 example.ClientDemo
+
+注意: 需要注意 demo 里的目录路径,应该和你的不一致,改成自己的即可,只要这个目录下有文件,就可以.但是文件别太多,否则会写爆磁盘.
 
 # 项目结构
 
