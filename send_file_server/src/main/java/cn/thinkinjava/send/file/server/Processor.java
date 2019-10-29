@@ -13,6 +13,7 @@ public interface Processor {
 
     /**
      * io 事件注册.
+     *
      * @param channel 通道.
      * @throws ClosedChannelException
      */

@@ -14,19 +14,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 基于 NIO 的 sendFile 服务端.
+ *
  * @author cxs
  */
 public class NioSendFileServer implements SendFileServer {
 
     private static Logger logger = LoggerFactory.getLogger(NioSendFileServer.class);
 
-    private int nextCursor = 0;
-
     /**
      * 4 个读线程, 每个线程管理一个 selector, 每个 selector 管理多个 socketChannel.
      */
     private KernelReadProcessor[] read_workers = new KernelReadProcessor[4];
     private int musk_read_workers_length = 0;
+    private int nextCursor = 0;
     /**
      * 4 个线程, 用于回写数据给客户端.
      */
@@ -43,10 +43,9 @@ public class NioSendFileServer implements SendFileServer {
     @Override
     public void start(String address, int port, String baseDir) throws IOException {
         try {
-            if (running.get()) {
+            if (running.compareAndSet(false, true)) {
                 throw new RuntimeException("send file server already running.");
             }
-            running.set(true);
 
             for (int i = 0; i < read_workers.length; i++) {
                 read_workers[i] = new KernelReadProcessor(baseDir, Selector.open());
@@ -80,7 +79,7 @@ public class NioSendFileServer implements SendFileServer {
         // 把 server socket 和 accept 注册到 这个 selector 中.
         acceptProcessor.register(serverSocketChannel);
 
-        logger.info("send file server start success, server info = {}", serverSocketChannel.socket());
+        logger.info("send file server start success and ready accept, server info = {}", serverSocketChannel.socket());
 
         while (running.get()) {
             try {

@@ -156,7 +156,7 @@ class KernelReadProcessor implements Processor {
                         SendResult sr = new SendResult(true, alreadyWrite);
                         sr.setFileAddr(baseDir + fileName);
 
-                        ReplyPacket packet = new ReplyPacket(socketChannel, new RpcPacket(fe.id, JackSonUtil.obj2String(sr).getBytes()));
+                        ReplyPacket packet = new ReplyPacket(socketChannel, new RpcPacket(fe.id, JackSonUtil.obj2ByteArray(sr)));
 
                         KernelWriteProcessor.queue.add(packet);
                     }

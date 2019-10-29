@@ -17,7 +17,6 @@ import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -31,7 +30,7 @@ public class NioSendFileClient implements SendFileClient {
 
     private static AtomicLong rpcId = new AtomicLong();
     private static Logger logger = LoggerFactory.getLogger(NioSendFileClient.class);
-    private static final int fix_num = 4 + 2 + 8 + 8;
+    private static final int FIX_NUM = 4 + 2 + 8 + 8;
     private static Map<Long, CountDownLatch> requestMap = new ConcurrentHashMap<>();
     private static Map<Long, SendResult> resultMap = new ConcurrentHashMap<>();
 
@@ -39,17 +38,20 @@ public class NioSendFileClient implements SendFileClient {
     private int port = 8082;
     private AtomicBoolean running = new AtomicBoolean();
     private SocketChannel socketChannel;
-    private Selector readSelector;
 
     private ExecutorService execute = new ThreadPoolExecutor(1, 1, 60, TimeUnit.SECONDS,
             new LinkedBlockingQueue<Runnable>(), new SendFileNameThreadFactory("client_read"));
 
     @Override
     public void start(String address, int port) throws IOException {
-        running.set(true);
+        if (running.compareAndSet(false, true)) {
+            throw new IllegalStateException("client already start.");
+        }
         try {
+            this.host = address;
+            this.port = port;
 
-            SocketAddress sad = new InetSocketAddress(host, port);
+            SocketAddress sad = new InetSocketAddress(this.host, this.port);
             socketChannel = SocketChannel.open();
             // 连接
             socketChannel.connect(sad);
@@ -91,7 +93,7 @@ public class NioSendFileClient implements SendFileClient {
                         }
 
                         resultMap.put(packet.getId(),
-                                JackSonUtil.string2Obj(new String(packet.getContent()), SendResult.class));
+                                JackSonUtil.byteArray2Obj((packet.getContent()), SendResult.class));
 
                         CountDownLatch countDownLatch = requestMap.get(packet.getId());
                         if (countDownLatch == null) {
@@ -102,6 +104,7 @@ public class NioSendFileClient implements SendFileClient {
                         requestMap.remove(packet.getId());
 
                     } catch (Exception e) {
+                        // ignore
                         e.printStackTrace();
                     }
 
@@ -164,7 +167,7 @@ public class NioSendFileClient implements SendFileClient {
             // 以上固定 14 字节.
             // 然后写入 文件名称.
             // 再然后写入文件内容.
-            ByteBuffer bb = ByteBuffer.allocateDirect((fix_num + nameContent.length));
+            ByteBuffer bb = ByteBuffer.allocateDirect((FIX_NUM + nameContent.length));
             bb.putInt(MagicNum.INSTANCE.getNum());
             bb.putLong(id);
             bb.putShort((short) nameContent.length);
@@ -189,7 +192,7 @@ public class NioSendFileClient implements SendFileClient {
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
             throw e;
-        }finally {
+        } finally {
             fc.close();
         }
 

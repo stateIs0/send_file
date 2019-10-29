@@ -8,9 +8,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
-import java.util.Map;
-import java.util.concurrent.*;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SocketChannel;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -26,7 +30,6 @@ class KernelWriteProcessor implements Processor {
     private ExecutorService execute = new ThreadPoolExecutor(1, 1, 60,
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(1), new SendFileNameThreadFactory("W"));
-
 
 
     @Override

@@ -47,6 +47,24 @@ public class JackSonUtil {
     }
 
     /**
+     * @param obj
+     * @return
+     */
+    public static <T> byte[] obj2ByteArray(T obj) {
+        if (obj == null) {
+            return null;
+        }
+        try {
+            String str = obj instanceof String ? (String) obj : objectMapper.writeValueAsString(obj);
+            return str.getBytes();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    /**
      * 有格式的
      *
      * @param obj
@@ -75,6 +93,27 @@ public class JackSonUtil {
         if (StringUtils.isEmpty(str) || clazz == null) {
             return null;
         }
+
+        try {
+            return clazz.equals(String.class) ? (T) str : objectMapper.readValue(str, clazz);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * 字节数组转对象
+     *
+     * @param clazz
+     * @return
+     */
+    public static <T> T byteArray2Obj(byte[] array, Class<T> clazz) {
+        if (array == null || clazz == null) {
+            return null;
+        }
+
+        String str = new String(array);
 
         try {
             return clazz.equals(String.class) ? (T) str : objectMapper.readValue(str, clazz);

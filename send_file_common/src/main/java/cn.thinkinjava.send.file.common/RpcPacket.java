@@ -60,7 +60,7 @@ public class RpcPacket {
         return "RpcPacket{" +
                 "version=" + version +
                 ", id=" + id +
-                ", content=" + JackSonUtil.string2Obj(new String(content), SendResult.class) +
+                ", content=" + JackSonUtil.byteArray2Obj((content), SendResult.class) +
                 '}';
     }
 }
