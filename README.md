@@ -18,9 +18,49 @@
 * send_file_server 服务端模块.
 * example 使用例子. 
 
-# IO 模型
-
 # 线程模型
+
+
+
+![image-20191029093524267](https://tva1.sinaimg.cn/large/006y8mN6ly1g8etjmkuejj30vv0u0wg2.jpg)
+
+
+
+如上图所示。
+
+#### 在 client 端：
+
+ 每个 Client 实例，维护一个 TCP 连接。该 Client 的写入方法是线程安全的。
+
+当用户并发写入时，可并发写，并发回复，因为写和回复是异步的。
+
+#### 在 server 端：
+
+server 端维护着一个 ServerSocketChannel 实例，该实例的作用就是接收 accep 事件，且由一个线程维护这个 accept selector 。
+
+
+
+当有新的 client 连接事件时，accept selector 就将这个连接交给 read 线程（默认 server 有 4 个 read 线程）。
+
+
+
+#### 什么是“交给”？
+
+
+
+注意：每个 read 线程都维护着一个单独的 selector。 4 个 read 线程，就维护了 4 个 selector。
+
+
+
+当 accept 得到新的客户端连接时，先从 4 个read 线程组里 get 一个线程，然后将这个 客户端连接 作为 key 注册到这个线程所对应的 read selector 上。从而将这个 Socket “交给” read 线程。
+
+
+
+而这个 read 线程则使用这个 selector 轮询事件，如果 socket 可读，那么就进行读，读完之后，利用 DMA 写进磁盘。
+
+
+
+# IO 模型
 
 ![](https://tva1.sinaimg.cn/large/006y8mN6ly1g8esdrp8fhj30zr0u00u2.jpg)
 
@@ -89,5 +129,6 @@ client socket 也会监听着 read 事件，注意：client 是不需要 select 
 | nameContent | 2              | Request id， TCP 多路复用 id                      |
 | bodyLength  | 8              | rpc 实际消息内容的长度                            |
 | nameContent | bodyLength     | 文件名 UTF-8 数组                                 |
+
 
 
