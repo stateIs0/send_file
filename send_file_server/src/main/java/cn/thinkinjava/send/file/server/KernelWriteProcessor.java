@@ -20,18 +20,13 @@ class KernelWriteProcessor implements Processor {
 
     private static Logger logger = LoggerFactory.getLogger(KernelWriteProcessor.class);
 
+    public static LinkedBlockingQueue<ReplyPacket> queue = new LinkedBlockingQueue<>();
+
     private AtomicBoolean running = new AtomicBoolean();
-    private Selector writeSelector;
     private ExecutorService execute = new ThreadPoolExecutor(1, 1, 60,
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(1), new SendFileNameThreadFactory("W"));
 
-    static Map<SocketChannel, RpcPacket> resultMap = new ConcurrentHashMap<>();
-    public static LinkedBlockingQueue<ReplyPacket> queue = new LinkedBlockingQueue<>();
-
-    public KernelWriteProcessor(Selector writeSelector) {
-        this.writeSelector = writeSelector;
-    }
 
 
     @Override
@@ -66,7 +61,6 @@ class KernelWriteProcessor implements Processor {
 
     @Override
     public void register(SelectableChannel channel) throws ClosedChannelException {
-        channel.register(writeSelector, SelectionKey.OP_WRITE);
     }
 
     @Override

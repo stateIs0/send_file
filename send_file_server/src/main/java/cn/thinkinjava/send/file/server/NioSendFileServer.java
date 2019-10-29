@@ -14,15 +14,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 基于 NIO 的 sendFile 服务端.
+ * @author cxs
  */
 public class NioSendFileServer implements SendFileServer {
 
-    private int rnext = 0;
-    private int wnext = 0;
-
     private static Logger logger = LoggerFactory.getLogger(NioSendFileServer.class);
 
+    private int rnext = 0;
+
+    /**
+     * 4 个线程, 每个线程管理一个 selector, 每个 selector 管理多个 socketChannel.
+     */
     private KernelReadProcessor[] worker = new KernelReadProcessor[4];
+    /**
+     * 4 个线程, 用于写回数据给客户端.
+     */
     private KernelWriteProcessor[] writers = new KernelWriteProcessor[4];
     private KernelAcceptProcessor acceptProcessor;
     private AtomicBoolean running = new AtomicBoolean();
@@ -32,9 +38,6 @@ public class NioSendFileServer implements SendFileServer {
         return worker[Math.abs(++rnext) % worker.length];
     }
 
-    private KernelWriteProcessor nextKernelWriteProcessor() {
-        return writers[Math.abs(++wnext) % writers.length];
-    }
 
     @Override
     public void start(String address, int port, String baseDir) throws IOException {
@@ -50,7 +53,7 @@ public class NioSendFileServer implements SendFileServer {
             }
 
             for (int i = 0; i < writers.length; i++) {
-                writers[i] = new KernelWriteProcessor(Selector.open());
+                writers[i] = new KernelWriteProcessor();
                 writers[i].start();
             }
 
@@ -67,10 +70,11 @@ public class NioSendFileServer implements SendFileServer {
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.socket().bind(new InetSocketAddress(address, port));
+        // 此 selector 专门用于 accept 连接.
         Selector acceptSelector = Selector.open();
 
         acceptProcessor = new KernelAcceptProcessor(acceptSelector);
-
+        // 把 server socket 和 accept 注册到 这个 selector 中.
         acceptProcessor.register(serverSocketChannel);
 
         logger.info("send file server start success, server info = {}", serverSocketChannel.socket());
@@ -88,8 +92,6 @@ public class NioSendFileServer implements SendFileServer {
                     if (key.isAcceptable()) {
                         SocketChannel socketChannel = serverSocketChannel.accept();
                         socketChannel.configureBlocking(false);
-
-                        nextKernelWriteProcessor().register(socketChannel);
 
                         nextKernelReadProcessor().register(socketChannel);
 

@@ -1,17 +1,14 @@
 package cn.thinkinjava.send.file.server;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.nio.channels.*;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
 /**
  * accept 事件处理器.
  */
 class KernelAcceptProcessor implements Processor {
-
-    private static Logger logger = LoggerFactory.getLogger(KernelAcceptProcessor.class);
 
     private Selector selector;
 
@@ -19,16 +16,8 @@ class KernelAcceptProcessor implements Processor {
         this.selector = selector;
     }
 
-    public void accept(ServerSocketChannel serverChannel) throws IOException {
-        SocketChannel socketChannel = serverChannel.accept();
-        socketChannel.configureBlocking(false);
-        socketChannel.register(selector, SelectionKey.OP_READ);
-        logger.info("accept a new socket {}", socketChannel.socket());
-    }
-
     @Override
     public void start() {
-
     }
 
     @Override

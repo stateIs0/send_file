@@ -51,14 +51,17 @@ public class NioSendFileClient implements SendFileClient {
         try {
 
             SocketAddress sad = new InetSocketAddress(host, port);
-            socketChannel = null;
             socketChannel = SocketChannel.open();
+            // 连接
             socketChannel.connect(sad);
+            // tcp 优化.
             socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, Boolean.FALSE);
+            // 非阻塞
             socketChannel.configureBlocking(false);
-            readSelector = Selector.open();
-
-            socketChannel.register(readSelector, SelectionKey.OP_READ);
+//            // 读 selector.
+//            readSelector = Selector.open();
+//
+//            socketChannel.register(readSelector, SelectionKey.OP_READ);
             processReadKeys();
             logger.info("send file client start success. socket = {}", socketChannel.socket());
         } catch (Exception e) {

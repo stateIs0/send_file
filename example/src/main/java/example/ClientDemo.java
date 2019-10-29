@@ -20,7 +20,7 @@ public class ClientDemo {
         addFile(files);
         addFile(file2);
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 15; i++) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
