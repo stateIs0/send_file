@@ -11,13 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MemoryAllocator {
 
-    private static final ThreadLocal<Map<Integer, ByteBuffer>> MEMORY_POOL = new ThreadLocal<Map<Integer, ByteBuffer>>() {
-        @Override
-        protected Map<Integer, ByteBuffer> initialValue() {
-            return new ConcurrentHashMap<>();
-        }
-
-    };
+    private static final ThreadLocal<Map<Integer, ByteBuffer>> MEMORY_POOL = ThreadLocal.withInitial(ConcurrentHashMap::new);
 
     /**
      * 分配内存.
