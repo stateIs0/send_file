@@ -136,14 +136,19 @@ class KernelReadProcessor implements Processor {
                     String fileName = new String(nameArr);
                     FileChannel fc = new RandomAccessFile(new File(baseDir + fileName), "rw").getChannel();
                     long alreadyWrite = 0;
-                    while (alreadyWrite < fe.bodyLength) {
-                        alreadyWrite += fc.transferFrom(socketChannel, alreadyWrite, fe.bodyLength - alreadyWrite);
+
+                    try {
+                        while (alreadyWrite < fe.bodyLength) {
+                            alreadyWrite += fc.transferFrom(socketChannel, alreadyWrite, fe.bodyLength - alreadyWrite);
+                        }
+                        if (force) {
+                            // 防止宕机采用
+                            fc.force(true);
+                        }
+                    } finally {
+                        fc.close();
                     }
-                    if (force) {
-                        // 防止宕机采用
-                        fc.force(true);
-                    }
-                    fc.close();
+
                     long end = System.currentTimeMillis();
                     logger.info("send file transfer over, file size = {}, cost time = {}, id = {}", alreadyWrite, end - start, fe.id);
                     if (fe.id != -1) {
