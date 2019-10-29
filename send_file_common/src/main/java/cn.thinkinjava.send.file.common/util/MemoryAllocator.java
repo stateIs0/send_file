@@ -1,8 +1,8 @@
 package cn.thinkinjava.send.file.common.util;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 内存分配器.
@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MemoryAllocator {
 
-    private static final ThreadLocal<Map<Integer, ByteBuffer>> MEMORY_POOL = ThreadLocal.withInitial(ConcurrentHashMap::new);
+    private static final ThreadLocal<Map<Integer, ByteBuffer>> MEMORY_POOL = ThreadLocal.withInitial(HashMap::new);
 
     /**
      * 分配内存.
