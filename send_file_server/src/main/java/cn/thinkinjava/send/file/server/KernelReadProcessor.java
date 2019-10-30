@@ -115,7 +115,6 @@ class KernelReadProcessor implements Processor {
                     if (result == -1) {
                         // 表示客户端主动关闭连接.
                         socketChannel.socket().close();
-                        key.cancel();
                         logger.warn("client close connection. result is -1, socket = {}", socketChannel.socket());
                     }
                     metaBuffer.flip();

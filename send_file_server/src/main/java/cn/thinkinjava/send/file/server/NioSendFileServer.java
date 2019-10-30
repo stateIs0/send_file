@@ -106,7 +106,6 @@ public class NioSendFileServer implements SendFileServer {
                 if (key != null) {
                     try {
                         key.channel().close();
-                        key.cancel();
                     } catch (IOException ex) {
                         logger.warn(ex.getMessage(), ex);
                     }
