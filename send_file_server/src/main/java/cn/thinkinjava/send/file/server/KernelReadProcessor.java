@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -91,7 +92,11 @@ class KernelReadProcessor implements Processor {
     }
 
     private void doRead() throws IOException {
-        for (SelectionKey key : keys) {
+        Iterator<SelectionKey> iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            SelectionKey key = iterator.next();
+            // must remove. cpu 100%
+            iterator.remove();
             SocketChannel socketChannel = (SocketChannel) key.channel();
             FileEntry fe = map.get(socketChannel);
             if (fe == null) {

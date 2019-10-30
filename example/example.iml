@@ -12,7 +12,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="send_file_server" />
-    <orderEntry type="module" module-name="send_file_server" />
     <orderEntry type="module" module-name="send_file_common" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.28" level="project" />
     <orderEntry type="library" name="Maven: ch.qos.logback:logback-core:1.0.11" level="project" />

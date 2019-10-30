@@ -24,8 +24,8 @@ public class NioSendFileServer implements SendFileServer {
     /**
      * 4 个读线程, 每个线程管理一个 selector, 每个 selector 管理多个 socketChannel.
      */
-    private KernelReadProcessor[] read_workers = new KernelReadProcessor[4];
-    private int musk_read_workers_length = 0;
+    private KernelReadProcessor[] readWorkers = new KernelReadProcessor[4];
+    private int muskReadWorkersLength = 0;
     private int nextCursor = 0;
     /**
      * 4 个线程, 用于回写数据给客户端.
@@ -36,7 +36,7 @@ public class NioSendFileServer implements SendFileServer {
     private ServerSocketChannel serverSocketChannel;
 
     private KernelReadProcessor nextKernelReadProcessor() {
-        return read_workers[Math.abs(++nextCursor) & musk_read_workers_length];
+        return readWorkers[Math.abs(++nextCursor) & muskReadWorkersLength];
     }
 
 
@@ -47,12 +47,12 @@ public class NioSendFileServer implements SendFileServer {
                 throw new RuntimeException("send file server already running.");
             }
 
-            for (int i = 0; i < read_workers.length; i++) {
-                read_workers[i] = new KernelReadProcessor(baseDir, Selector.open());
-                read_workers[i].start();
+            for (int i = 0; i < readWorkers.length; i++) {
+                readWorkers[i] = new KernelReadProcessor(baseDir, Selector.open());
+                readWorkers[i].start();
             }
 
-            musk_read_workers_length = read_workers.length - 1;
+            muskReadWorkersLength = readWorkers.length - 1;
 
             for (int i = 0; i < write_workers.length; i++) {
                 write_workers[i] = new KernelWriteProcessor();
@@ -84,10 +84,11 @@ public class NioSendFileServer implements SendFileServer {
         while (running.get()) {
             try {
                 acceptSelector.select();
-                Iterator<SelectionKey> selectedKeys = acceptSelector.selectedKeys().iterator();
-                while (selectedKeys.hasNext()) {
-                    key = selectedKeys.next();
-                    selectedKeys.remove();
+                Iterator<SelectionKey> iterator = acceptSelector.selectedKeys().iterator();
+                while (iterator.hasNext()) {
+                    key = iterator.next();
+                    // must remove. cpu 100%
+                    iterator.remove();
                     if (!key.isValid()) {
                         continue;
                     }
@@ -116,8 +117,8 @@ public class NioSendFileServer implements SendFileServer {
 
     @Override
     public void shutdown() {
-        for (int i = 0; i < read_workers.length; i++) {
-            read_workers[i].stop();
+        for (int i = 0; i < readWorkers.length; i++) {
+            readWorkers[i].stop();
             write_workers[i].stop();
         }
         try {
